@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Add Link import
+import { Link } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -16,6 +16,9 @@ import ProfessionalCard from '../components/ProfessionalCard';
 import BookingDetailsModal from '../components/BookingDetailsModal';
 import AddServiceForm from '../components/AddServiceForm';
 import AddProfessionalForm from '../components/AddProfessionalForm';
+import EditProfessionalForm from '../components/EditProfessionalForm';
+import EditServiceForm from '../components/EditServiceForm';
+import ServiceDetailsModal from '../components/serviceDetailsModel';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -64,6 +67,11 @@ function Dashboard() {
   const [services, setServices] = useState([]);
   const [professionals, setProfessionals] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedProfessional, setSelectedProfessional] = useState(null);
+  const [showEditProfessional, setShowEditProfessional] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [showEditService, setShowEditService] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [error, setError] = useState('');
 
   // Fetch data
@@ -83,7 +91,6 @@ function Dashboard() {
     const fetchServices = async () => {
       try {
         const apiurl = import.meta.env.VITE_API_URL;
-        console.log(apiurl);
         const response = await fetch(`${apiurl}/services`);
         if (!response.ok) throw new Error('Failed to fetch services');
         const data = await response.json();
@@ -114,21 +121,82 @@ function Dashboard() {
     setServices([...services, service]);
   };
 
+  const updateService = (updatedService) => {
+    setServices(
+      services.map((s) => (s.service_id === updatedService.service_id ? updatedService : s))
+    );
+  };
+
+  const deleteService = async (serviceId) => {
+    try {
+      const apiurl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiurl}/services/${serviceId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete service');
+      setServices(services.filter((s) => s.service_id !== serviceId));
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   const addProfessional = (professional) => {
     setProfessionals([...professionals, professional]);
   };
 
-  const activeBookings = bookings.filter((booking) => booking.status === 'Pending').slice(0, 3);
+  const updateProfessional = (updatedProfessional) => {
+    setProfessionals(
+      professionals.map((p) =>
+        p.professional_id === updatedProfessional.professional_id ? updatedProfessional : p
+      )
+    );
+  };
+
+  const deleteProfessional = async (professionalId) => {
+    try {
+      const apiurl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiurl}/professionals/${professionalId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete professional');
+      setProfessionals(professionals.filter((p) => p.professional_id !== professionalId));
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleUpdateBooking = (updatedBooking) => {
+    setBookings(
+      bookings.map((booking) =>
+        booking.booking_id === updatedBooking.booking_id ? updatedBooking : booking
+      )
+    );
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    try {
+      const apiurl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiurl}/bookings/${bookingId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete booking');
+      setBookings(bookings.filter((booking) => booking.booking_id !== bookingId));
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const activeBookings = bookings.filter((booking) => booking.status === 'pending').slice(0, 3);
   const displayedServices = services.slice(0, 3);
   const displayedProfessionals = professionals.slice(0, 3);
 
-  // Enhanced booking stats with primary color
+  // Enhanced booking stats
   const bookingStats = {
     labels: ['Weekly', 'Monthly', 'Yearly'],
     datasets: [
       {
         label: 'Total Bookings',
-        data: [12, 45, 320],
+        data: [12, 45, 320], // Replace with actual data if available
         backgroundColor: 'rgba(32, 117, 197, 0.7)',
         borderColor: '#2075C5',
         borderWidth: 2,
@@ -168,7 +236,7 @@ function Dashboard() {
         <section id="active-bookings" className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-gray-800">Active Bookings</h3>
-            {bookings.filter((b) => b.status === 'Pending').length > 3 && (
+            {bookings.filter((b) => b.status === 'pending').length > 3 && (
               <Link
                 to="/bookings"
                 className="text-[#2075C5] hover:text-[#1a5fa0] font-medium transition-colors duration-200"
@@ -187,7 +255,12 @@ function Dashboard() {
           ) : (
             <div className="flex overflow-x-auto space-x-6 pb-4">
               {activeBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} onClick={setSelectedBooking} />
+                <BookingCard
+                  key={booking.booking_id}
+                  booking={booking}
+                  onClick={setSelectedBooking}
+                  onDelete={handleDeleteBooking}
+                />
               ))}
             </div>
           )}
@@ -216,7 +289,19 @@ function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedServices.map((service) => (
-                <ServiceCard key={service.service_id} service={service} />
+                <ServiceCard
+                  key={service.service_id}
+                  service={service}
+                  onClick={(s) => {
+                    setSelectedService(s);
+                    setShowDetailsModal(true);
+                  }}
+                  onEdit={(s) => {
+                    setSelectedService(s);
+                    setShowEditService(true);
+                  }}
+                  onDelete={deleteService}
+                />
               ))}
             </div>
           )}
@@ -236,7 +321,7 @@ function Dashboard() {
             )}
           </div>
           {displayedProfessionals.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center shadow-lg border border-gray-100 desktop">
+            <div className="bg-white rounded-2xl p-12 text-center shadow-lg border border-gray-100">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-gray-400 text-2xl">👥</span>
               </div>
@@ -245,7 +330,15 @@ function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedProfessionals.map((professional) => (
-                <ProfessionalCard key={professional.professional_id} professional={professional} />
+                <ProfessionalCard
+                  key={professional.professional_id}
+                  professional={professional}
+                  onEdit={(p) => {
+                    setSelectedProfessional(p);
+                    setShowEditProfessional(true);
+                  }}
+                  onDelete={deleteProfessional}
+                />
               ))}
             </div>
           )}
@@ -261,7 +354,32 @@ function Dashboard() {
 
         {/* Modals */}
         {selectedBooking && (
-          <BookingDetailsModal booking={selectedBooking} closeModal={() => setSelectedBooking(null)} />
+          <BookingDetailsModal
+            booking={selectedBooking}
+            closeModal={() => setSelectedBooking(null)}
+            onUpdate={handleUpdateBooking}
+            onDelete={handleDeleteBooking}
+          />
+        )}
+        {showEditProfessional && selectedProfessional && (
+          <EditProfessionalForm
+            professional={selectedProfessional}
+            updateProfessional={updateProfessional}
+            closeModal={() => setShowEditProfessional(false)}
+          />
+        )}
+        {showEditService && selectedService && (
+          <EditServiceForm
+            service={selectedService}
+            updateService={updateService}
+            closeModal={() => setShowEditService(false)}
+          />
+        )}
+        {showDetailsModal && selectedService && (
+          <ServiceDetailsModal
+            service={selectedService}
+            closeModal={() => setShowDetailsModal(false)}
+          />
         )}
       </div>
     </div>

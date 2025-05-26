@@ -8,6 +8,7 @@ function AddServiceForm({ addService, closeModal }) {
   const [serviceDuration, setServiceDuration] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [serviceImage, setServiceImage] = useState('');
+  const [location, setLocation] = useState(''); // New state for location
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false); // New state to track submission
@@ -45,6 +46,7 @@ function AddServiceForm({ addService, closeModal }) {
     formData.append('service_duration', totalMinutes.toString());
     formData.append('category_id', categoryId);
     formData.append('service_image', serviceImage);
+    formData.append('location', location.toLowerCase());
 
     console.log('Sending FormData:');
     for (const pair of formData.entries()) {
@@ -139,7 +141,7 @@ function AddServiceForm({ addService, closeModal }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-sm mb-1" htmlFor="servicePrice">Price ($)</label>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="servicePrice">Price (₹)</label>
                   <input
                     type="number"
                     id="servicePrice"
@@ -201,6 +203,18 @@ function AddServiceForm({ addService, closeModal }) {
                   onChange={(e) => setServiceImage(e.target.value)}
                   placeholder="Image URL"
                   required
+                  disabled={isSubmitted}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm mb-1" htmlFor="location">Location (Optional)</label>
+                <input
+                  type="text"
+                  id="location"
+                  className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g., Nagpur"
                   disabled={isSubmitted}
                 />
               </div>

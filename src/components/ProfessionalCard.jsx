@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 
-function ProfessionalCard({ professional }) {
+function ProfessionalCard({ professional, onEdit, onDelete }) {
   const [serviceName, setServiceName] = useState('Loading...');
   const [userName, setUserName] = useState('Loading...');
 
   useEffect(() => {
     const fetchNames = async () => {
       try {
-         const apiurl = import.meta.env.VITE_API_URL;
+        const apiurl = import.meta.env.VITE_API_URL;
         if (professional.service_id) {
           const serviceResponse = await fetch(`${apiurl}/services/${professional.service_id}`);
           if (serviceResponse.ok) {
@@ -34,6 +34,12 @@ function ProfessionalCard({ professional }) {
     fetchNames();
   }, [professional.service_id, professional.user_id]);
 
+  const handleDelete = () => {
+    if (window.confirm(`Are you sure you want to delete Professional #${professional.professional_id}?`)) {
+      onDelete(professional.professional_id);
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
       <div className="flex items-center space-x-4 mb-4">
@@ -59,7 +65,22 @@ function ProfessionalCard({ professional }) {
           <span className="font-medium text-gray-800 text-sm">{new Date(professional.created_at).toLocaleDateString()}</span>
         </div>
       </div>
+      <div className="flex justify-end space-x-2 mt-4">
+        <button
+          onClick={() => onEdit(professional)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+        >
+          Edit
+        </button>
+        <button
+          onClick={handleDelete}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200"
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
+
 export default ProfessionalCard;

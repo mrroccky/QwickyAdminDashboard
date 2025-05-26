@@ -11,7 +11,16 @@ function AddProfessionalForm({ addProfessional, closeModal }) {
   const [error, setError] = useState('');
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false); // New state to track submission
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showAddUserForm, setShowAddUserForm] = useState(false); // State for nested user form
+  const [newUser, setNewUser] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    password: ''
+  }); // State for new user form fields
+  const [userFormError, setUserFormError] = useState('');
 
   const serviceDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
@@ -108,9 +117,8 @@ function AddProfessionalForm({ addProfessional, closeModal }) {
       setUserId('');
       setServiceSearch('');
       setUserSearch('');
-      setIsSubmitted(true); // Mark as submitted
+      setIsSubmitted(true);
 
-      // Close modal after 2 seconds
       setTimeout(() => {
         closeModal();
       }, 2000);
@@ -130,6 +138,69 @@ function AddProfessionalForm({ addProfessional, closeModal }) {
   const handleUserSelect = (user) => {
     setUserId(user.user_id);
     setUserSearch(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unnamed User');
+    setShowUserDropdown(false);
+  };
+
+  // Handle new user form submission
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+    setUserFormError('');
+
+    const { first_name, last_name, email, phone_number, password } = newUser;
+    if (!first_name || !last_name || !email || !phone_number || !password) {
+      setUserFormError('All fields are required');
+      return;
+    }
+
+    try {
+      const apiurl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiurl}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user');
+      }
+
+      const { user_id } = await response.json();
+      const newUserData = {
+        user_id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        account_status: 'active'
+      };
+
+      setUsers([...users, newUserData]);
+      setUserId(user_id);
+      setUserSearch(`${first_name} ${last_name}`.trim());
+      setShowAddUserForm(false);
+      setShowUserDropdown(false);
+      setNewUser({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone_number: '',
+        password: ''
+      });
+    } catch (err) {
+      setUserFormError(err.message);
+    }
+  };
+
+  // Handle new user form input changes
+  const handleNewUserChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Toggle add user form
+  const handleAddNewUserClick = () => {
+    setShowAddUserForm(true);
     setShowUserDropdown(false);
   };
 
@@ -153,6 +224,90 @@ function AddProfessionalForm({ addProfessional, closeModal }) {
               />
             </svg>
             <p className="text-green-500 text-lg font-semibold">{message}</p>
+          </div>
+        ) : showAddUserForm ? (
+          <div>
+            <h2 className="text-xl font-bold mb-3 text-gray-800">Add New User</h2>
+            <form onSubmit={handleAddUserSubmit}>
+              <div className="grid grid-cols-1 gap-3 mb-3">
+                <div>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="first_name">First Name</label>
+                  <input
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    value={newUser.first_name}
+                    onChange={handleNewUserChange}
+                    placeholder="First Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="last_name">Last Name</label>
+                  <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    value={newUser.last_name}
+                    onChange={handleNewUserChange}
+                    placeholder="Last Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    value={newUser.email}
+                    onChange={handleNewUserChange}
+                    placeholder="Email"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="phone_number">Phone Number</label>
+                  <input
+                    type="text"
+                    id="phone_number"
+                    name="phone_number"
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    value={newUser.phone_number}
+                    onChange={handleNewUserChange}
+                    placeholder="Phone Number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-1" htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                    value={newUser.password}
+                    onChange={handleNewUserChange}
+                    placeholder="Password"
+                  />
+                </div>
+              </div>
+              {userFormError && <p className="text-red-500 text-sm mb-2">{userFormError}</p>}
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition duration-200 text-sm"
+                >
+                  Create User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserForm(false)}
+                  className="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition duration-200 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         ) : (
           <>
@@ -248,6 +403,12 @@ function AddProfessionalForm({ addProfessional, closeModal }) {
                       ) : (
                         <div className="px-4 py-2 text-sm text-gray-500">No users found</div>
                       )}
+                      <div
+                        className="px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 cursor-pointer font-semibold"
+                        onClick={handleAddNewUserClick}
+                      >
+                        + Add new user
+                      </div>
                     </div>
                   )}
                 </div>

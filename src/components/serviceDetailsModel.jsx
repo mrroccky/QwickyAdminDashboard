@@ -5,6 +5,8 @@ function ServiceDetailsModal({ service, closeModal }) {
     1: 'Domestic',
     2: 'Commercial',
     3: 'Corporate',
+    4:'Extended',
+    5:'Quick'
   };
 
   const price = parseFloat(service.service_price) || 0;
@@ -46,6 +48,7 @@ function ServiceDetailsModal({ service, closeModal }) {
           <div>
             <span className="text-gray-600">Description:</span>
             <p className="text-gray-800 mt-1">{service.description}</p>
+            <p className="text-gray-800 mt-1">{service.main_description}</p>
           </div>
           {service.service_image && (
             <img

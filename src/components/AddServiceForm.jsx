@@ -3,6 +3,7 @@ import { useState } from 'react';
 function AddServiceForm({ addService, closeModal }) {
   const [serviceTitle, setServiceTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [mainDescription, setMainDescription] = useState('');
   const [serviceType, setServiceType] = useState('');
   const [servicePrice, setServicePrice] = useState('');
   const [serviceDuration, setServiceDuration] = useState('');
@@ -18,7 +19,7 @@ function AddServiceForm({ addService, closeModal }) {
     setMessage('');
     setError('');
 
-    if (!serviceTitle || !description || !serviceType || !servicePrice || 
+    if (!serviceTitle || !description || !mainDescription || !serviceType || !servicePrice || 
         !serviceDuration || !categoryId || !serviceImage) {
       setError('All fields are required');
       return;
@@ -28,6 +29,13 @@ function AddServiceForm({ addService, closeModal }) {
     const descriptionArray = description.split('\n').filter(item => item.trim() !== '');
     if (descriptionArray.length === 0) {
       setError('Description cannot be empty');
+      return;
+    }
+
+    // Split main_description by newlines and filter out empty strings
+    const mainDescriptionArray = mainDescription.split('\n').filter(item => item.trim() !== '');
+    if (mainDescriptionArray.length === 0) {
+      setError('Main Description cannot be empty');
       return;
     }
 
@@ -41,6 +49,7 @@ function AddServiceForm({ addService, closeModal }) {
     const formData = new FormData();
     formData.append('service_title', serviceTitle);
     formData.append('description', JSON.stringify(descriptionArray));
+    formData.append('main_description', JSON.stringify(mainDescriptionArray));
     formData.append('service_type', serviceType);
     formData.append('service_price', servicePrice);
     formData.append('service_duration', totalMinutes.toString());
@@ -70,6 +79,7 @@ function AddServiceForm({ addService, closeModal }) {
         service_id,
         service_title: serviceTitle,
         description: descriptionArray,
+        main_description: mainDescriptionArray,
         service_type: serviceType,
         service_price: parseFloat(servicePrice),
         service_duration: totalMinutes,
@@ -91,8 +101,8 @@ function AddServiceForm({ addService, closeModal }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded-xl shadow-2xl w-full max-w-md animate-fade-in">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-4 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
         {isSubmitted ? (
           <div className="flex flex-col items-center justify-center p-6">
             <svg
@@ -178,6 +188,8 @@ function AddServiceForm({ addService, closeModal }) {
                     <option value="1">Domestic</option>
                     <option value="2">Commercial</option>
                     <option value="3">Corporate</option>
+                    <option value="4">Extended Service</option>
+                    <option value="5">Quick Service</option>
                   </select>
                 </div>
               </div>
@@ -189,6 +201,18 @@ function AddServiceForm({ addService, closeModal }) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g., cleaning\nmop"
+                  rows="4"
+                  disabled={isSubmitted}
+                ></textarea>
+              </div>
+              <div className="mb-3">
+                <label className="block text-gray-700 text-sm mb-1" htmlFor="mainDescription">Main Description (About Serive)</label>
+                <textarea
+                  id="mainDescription"
+                  className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  value={mainDescription}
+                  onChange={(e) => setMainDescription(e.target.value)}
+                  placeholder="e.g., main features\nkey benefits"
                   rows="4"
                   disabled={isSubmitted}
                 ></textarea>

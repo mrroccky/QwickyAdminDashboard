@@ -2,7 +2,7 @@ import { useState } from "react";
 function Auth({ setIsAuthenticated, setLastActivity }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const storedPassword = 'dcc@123';
+  const storedPassword = import.meta.env.VITE_MAIN_PASS;
 
   const handleSubmit = (e) => {
     e.preventDefault();

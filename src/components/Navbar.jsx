@@ -60,18 +60,6 @@ function Navbar({ setShowAddService, setShowAddProfessional, timeLeft, handleLog
           {/* Action Buttons */}
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => setShowAddService(true)}
-              className="px-4 py-2 bg-[#2075C5] text-white rounded-xl hover:bg-[#1a5fa0] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              + Add Service
-            </button>
-            <button
-              onClick={() => setShowAddProfessional(true)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
-            >
-              + Add Professional
-            </button>
-            <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 font-medium"
             >

@@ -10,6 +10,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import DatePicker from 'react-date-picker';
+import 'react-date-picker/dist/DatePicker.css';
+import 'react-calendar/dist/Calendar.css';
 import BookingCard from '../components/BookingCard';
 import ServiceCard from '../components/ServiceCard';
 import ProfessionalCard from '../components/ProfessionalCard';
@@ -22,7 +25,7 @@ import ServiceDetailsModal from '../components/serviceDetailsModel';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// Circular Progress Component
+// Circular Progress Component (unchanged)
 function CircularProgress({ percentage, size = 120, strokeWidth = 8, label, value, color = "#2075C5" }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -73,6 +76,85 @@ function Dashboard() {
   const [showEditService, setShowEditService] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [error, setError] = useState('');
+  const [bookingStats, setBookingStats] = useState({
+    labels: ['Weekly', 'Monthly', 'Yearly'],
+    datasets: [
+      {
+        label: 'Total Bookings',
+        data: [0, 0, 0],
+        backgroundColor: 'rgba(32, 117, 197, 0.7)',
+        borderColor: '#2075C5',
+        borderWidth: 2,
+      },
+    ],
+  });
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  // Calculate date ranges for weekly, monthly, yearly stats
+  const getDateRanges = () => {
+    const today = new Date(); // Current date: June 2, 2025
+    const formatDate = (date) => date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7); // May 26, 2025 to June 2, 2025
+    const monthAgo = new Date(today);
+    monthAgo.setDate(today.getDate() - 30); // May 3, 2025 to June 2, 2025
+    const yearAgo = new Date(today);
+    yearAgo.setFullYear(today.getFullYear() - 1); // June 2, 2024 to June 2, 2025
+
+    return {
+      weekly: { start: weekAgo, end: today },
+      monthly: { start: monthAgo, end: today },
+      yearly: { start: yearAgo, end: today },
+    };
+  };
+
+  // Filter bookings by date range
+  const filterBookingsByDate = (bookings, start, end) => {
+    return bookings.filter((booking) => {
+      const createdAt = new Date(booking.created_at);
+      return createdAt >= start && createdAt <= end;
+    }).length;
+  };
+
+  // Update booking stats
+  const updateBookingStats = (bookings, customStart = null, customEnd = null) => {
+    if (customStart && customEnd) {
+      const formatDate = (date) => date.toISOString().split('T')[0];
+      const customCount = filterBookingsByDate(bookings, customStart, customEnd);
+      setBookingStats({
+        labels: [`${formatDate(customStart)} to ${formatDate(customEnd)}`],
+        datasets: [
+          {
+            label: 'Total Bookings',
+            data: [customCount],
+            backgroundColor: 'rgba(32, 117, 197, 0.7)',
+            borderColor: '#2075C5',
+            borderWidth: 2,
+          },
+        ],
+      });
+    } else {
+      const ranges = getDateRanges();
+      const weeklyCount = filterBookingsByDate(bookings, ranges.weekly.start, ranges.weekly.end);
+      const monthlyCount = filterBookingsByDate(bookings, ranges.monthly.start, ranges.monthly.end);
+      const yearlyCount = filterBookingsByDate(bookings, ranges.yearly.start, ranges.yearly.end);
+      setBookingStats({
+        labels: ['Weekly', 'Monthly', 'Yearly'],
+        datasets: [
+          {
+            label: 'Total Bookings',
+            data: [weeklyCount, monthlyCount, yearlyCount],
+            backgroundColor: 'rgba(32, 117, 197, 0.7)',
+            borderColor: '#2075C5',
+            borderWidth: 2,
+          },
+        ],
+      });
+    }
+  };
 
   // Fetch data
   useEffect(() => {
@@ -83,6 +165,7 @@ function Dashboard() {
         if (!response.ok) throw new Error('Failed to fetch bookings');
         const data = await response.json();
         setBookings(data);
+        updateBookingStats(data); // Update stats after fetching bookings
       } catch (error) {
         setError(error.message);
       }
@@ -117,6 +200,22 @@ function Dashboard() {
     fetchProfessionals();
   }, []);
 
+  // Handle custom date range submission
+  const handleCustomDateSubmit = () => {
+    if (!startDate || !endDate) {
+      setError('Please select both start and end dates');
+      return;
+    }
+    if (startDate > endDate) {
+      setError('Start date must be before end date');
+      return;
+    }
+    updateBookingStats(bookings, startDate, endDate);
+    setShowDatePickerModal(false);
+    setError('');
+  };
+
+  // Other functions (unchanged)
   const addService = (service) => {
     setServices([...services, service]);
   };
@@ -165,7 +264,7 @@ function Dashboard() {
     }
   };
 
-  const handleUpdateBooking = (updatedBooking) => {
+  const handleUpdate受験Booking = (updatedBooking) => {
     setBookings(
       bookings.map((booking) =>
         booking.booking_id === updatedBooking.booking_id ? updatedBooking : booking
@@ -189,20 +288,6 @@ function Dashboard() {
   const activeBookings = bookings.filter((booking) => booking.status === 'pending').slice(0, 3);
   const displayedServices = services.slice(0, 3);
   const displayedProfessionals = professionals.slice(0, 3);
-
-  // Enhanced booking stats
-  const bookingStats = {
-    labels: ['Weekly', 'Monthly', 'Yearly'],
-    datasets: [
-      {
-        label: 'Total Bookings',
-        data: [12, 45, 320], // Replace with actual data if available
-        backgroundColor: 'rgba(32, 117, 197, 0.7)',
-        borderColor: '#2075C5',
-        borderWidth: 2,
-      },
-    ],
-  };
 
   const chartOptions = {
     responsive: true,
@@ -346,13 +431,76 @@ function Dashboard() {
 
         {/* Booking Statistics Section */}
         <section id="booking-stats" className="mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">Booking Statistics</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-bold text-gray-800">Booking Statistics</h3>
+            <button
+              onClick={() => setShowDatePickerModal(true)}
+              className="text-[#2075C5] hover:text-[#1a5fa0] font-medium transition-colors duration-200 flex items-center"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              Custom Date Range
+            </button>
+          </div>
           <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
             <Bar data={bookingStats} options={chartOptions} />
           </div>
         </section>
 
-        {/* Modals */}
+        {/* Date Picker Modal */}
+        {showDatePickerModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Select Date Range</h3>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Start Date</label>
+                <DatePicker
+                  onChange={setStartDate}
+                  value={startDate}
+                  maxDate={new Date()}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">End Date</label>
+                <DatePicker
+                  onChange={setEndDate}
+                  value={endDate}
+                  maxDate={new Date()}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowDatePickerModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCustomDateSubmit}
+                  className="px-4 py-2 bg-[#2075C5] text-white rounded-lg hover:bg-[#1a5fa0]"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modals (unchanged) */}
         {selectedBooking && (
           <BookingDetailsModal
             booking={selectedBooking}

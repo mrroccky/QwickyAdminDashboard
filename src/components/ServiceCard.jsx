@@ -5,6 +5,8 @@ function ServiceCard({ service, onClick, onEdit, onDelete }) {
     1: 'Domestic',
     2: 'Commercial',
     3: 'Corporate',
+    4: 'Extended',
+    5: 'Quick'
   };
 
   const price = parseFloat(service.service_price) || 0;
@@ -45,6 +47,8 @@ function ServiceCard({ service, onClick, onEdit, onDelete }) {
       </div>
       <div className="space-y-2">
         <p className="text-gray-600 text-sm line-clamp-2">{service.description}</p>
+        <h3>Main Description</h3>
+        <p className="text-gray-600 text-sm line-clamp-2">{service.main_description}</p>
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-500">
             Type: <span className="font-medium text-gray-700">{service.service_type}</span>

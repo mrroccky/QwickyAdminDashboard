@@ -55,11 +55,11 @@ function AllProfessionals() {
     <div className="min-h-screen bg-gray-100">
       <div className="p-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800 animate-fade-in">All Professionals</h2>
+          <h2 className="text-3xl font-bold text-gray-800 animate">All Professionals</h2>
           <div className="flex space-x-4">
             <button
               onClick={() => setShowAddProfessional(true)}
-              className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition duration-200"
+              className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition duration-200"
             >
               Add Professional
             </button>
@@ -73,15 +73,15 @@ function AllProfessionals() {
 
         <section id="professionals" className="mb-8">
           {professionals.length === 0 ? (
-            <p className="text-gray-500">No professionals</p>
+            <p className="text-gray-500">No professionals found</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {professionals.map((professional) => (
                 <ProfessionalCard
                   key={professional.professional_id}
                   professional={professional}
-                  onEdit={(p) => {
-                    setSelectedProfessional(p);
+                  onEdit={() => {
+                    setSelectedProfessional(professional);
                     setShowEditProfessional(true);
                   }}
                   onDelete={deleteProfessional}
@@ -102,7 +102,10 @@ function AllProfessionals() {
           <EditProfessionalForm
             professional={selectedProfessional}
             updateProfessional={updateProfessional}
-            closeModal={() => setShowEditProfessional(false)}
+            closeModal={() => {
+              setShowEditProfessional(false);
+              setSelectedProfessional(null);
+            }}
           />
         )}
       </div>
